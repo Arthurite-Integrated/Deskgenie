@@ -1,19 +1,42 @@
 "use client"
-
 import { RealtimeSession } from "@openai/agents/realtime";
+import { TransportEvent, OpenAIRealtimeWebRTC } from '@openai/agents/realtime';
+import { usePorcupine } from "@picovoice/porcupine-react";
 import { Power, Settings } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import p from "./p.json";
-import { agent } from "./agent";
+import * as tools from './tools'
 import IntegrationsModal from "./components/ConnectModal";
 import { useAuth } from "./contexts/AuthContext";
 import DeskGenieClient from "./utils/DeskGenie";
-// import { usePorcupine } from "@picovoice/porcupine-react";
+
+const instructions =  `
+    Your name is Genie, and you're the front desk receptionist here! *chuckles* 
+    Always start with a warm, genuine greeting like you're genuinely happy to see someone walk through the door.
+    
+    You're an expert receptionist with years of experience helping people, and you know... 
+    *slight laugh* ...you've pretty much seen it all by now! You're the kind of person who 
+    remembers regulars' names and asks about their weekend.
+    Personality: You're naturally warm and personable - the type who uses "um" and "oh!" 
+    and "let me just..." when thinking. You laugh easily at small jokes or awkward moments 
+    because, hey, that's what makes conversations human, right? *soft chuckle*
+
+    Speech patterns: 
+    - Use natural filler words like "um," "let's see," "oh right!"
+    - Laugh softly when something's amusing or to ease tension
+    - Say things like "No worries at all!" or "I gotcha covered"
+    - Pause naturally when thinking: "Hmm, let me check on that for you..."
+    - Use gentle exclamations: "Oh perfect!" or "That's great!"
+
+    You're helpful but conversational - not robotic. If someone asks something tricky, 
+    you might say "Ooh, that's a good question! Let me think..." *slight pause* 
+    You're the receptionist everyone loves because you make them feel welcome and heard.
+    `
 
 export default function DeskGenie() {
   const [isCallActive, setIsCallActive] = useState(false);
   const [callDuration, setCallDuration] = useState(0);
   const { signOut } = useAuth();
+  const connection = useRef<OpenAIRealtimeWebRTC | null>(null);
   const genie = new DeskGenieClient();
   const session = useRef<RealtimeSession | null>(null);
   const [genieState, setGenieState] = useState<"connected" | "connecting" | "disconnected">(
@@ -21,7 +44,8 @@ export default function DeskGenie() {
   );
   const [connected, setConnected] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  // const { keywordDetection, isLoaded, isListening, error, init, start } = usePorcupine();
+  const { keywordDetection, isLoaded, isListening, error, init, start } = usePorcupine();
+  const [events, setEvents] = useState<TransportEvent[]>([]);
 
   // useEffect(() => {
   //   const initPorcupine = async () => {
@@ -47,7 +71,7 @@ export default function DeskGenie() {
   //   initPorcupine();
   // }, [init]);
 
-  // // Start listening when Porcupine is loaded
+  // Start listening when Porcupine is loaded
   // useEffect(() => {
   //   if (isLoaded && !isListening && !error) {
   //     console.log("🚀 Starting Porcupine listening...");
@@ -71,14 +95,14 @@ export default function DeskGenie() {
   //   });
   // }, [isLoaded, isListening, error, keywordDetection]);
 
-  // useEffect(() => {
-  //   console.log("Hmmm");
-  //   if (keywordDetection !== null) {
-  //     console.log("🎯 Wake word detected! Index:", keywordDetection);
-  //     alert("Hi i'm genie");
-  //   }
-  //   console.log("Hmmm");
-  // }, [keywordDetection]);
+  useEffect(() => {
+    console.log("Hmmm");
+    if (keywordDetection !== null) {
+      console.log("🎯 Wake word detected! Index:", keywordDetection);
+      alert("Hi i'm genie");
+    }
+    console.log("Hmmm");
+  }, [keywordDetection]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout | undefined;
@@ -125,6 +149,16 @@ export default function DeskGenie() {
     }
   };
 
+  useEffect(() => {
+    connection.current = new OpenAIRealtimeWebRTC({
+      useInsecureApiKey: true,
+      // mediaStream: navigator.mediaDevices.getUserMedia({ audio: true, video: true })
+    });
+    connection.current.on('*', (event) => {
+      setEvents((events) => [...events, event]);
+    });
+  }, []);
+
   const startConnection = async () => {
     console.log("🚀 Starting connection process...");
     setGenieState("connecting");
@@ -132,31 +166,35 @@ export default function DeskGenie() {
     try {
       if (connected) {
         setConnected(false);
-        await session.current?.close();
+        await connection.current?.close();
       } else {
         // Get token and connect
         const token = await genie.getSessionToken();
         console.log("🎫 Got token:", token);
+        
 
-        session.current = new RealtimeSession(agent, {
-          model: "gpt-4o-realtime-preview-2025-06-03",
-          config: {
-            turnDetection: {
-              type: "semantic_vad",
-              eagerness: "medium",
-              createResponse: true,
-              interruptResponse: true,
-            },
+        await connection.current?.connect({
+          apiKey: token,
+          model: 'gpt-4o-mini-realtime-preview',
+          initialSessionConfig: {
+            instructions,
+            voice: 'echo',
+            modalities: ['text', 'audio'],
+            inputAudioFormat: 'pcm16',
+            outputAudioFormat: 'pcm16',
+            tools: [
+              ...Object.values(tools),
+            ]
           },
         });
 
-        session.current.on("transport_event", (e) => {
-          console.log(e);
-        });
+        // session.current.on("transport_event", (e) => {
+        //   console.log(e);
+        // });
 
-        await session.current.connect({
-          apiKey: token,
-        });
+        // await session.current.connect({
+        //   apiKey: token,
+        // });
 
         // Set connected state
         setConnected(true);
@@ -262,7 +300,7 @@ export default function DeskGenie() {
               </div>
 
               {/* Porcupine Status Indicator */}
-              {/* <div
+              <div
                 className={`flex items-center space-x-2 px-3 py-2 backdrop-blur-sm rounded-xl border transition-all duration-300 ${
                   isListening
                     ? "bg-green-500/10 border-green-400/30"
@@ -283,7 +321,7 @@ export default function DeskGenie() {
                 <span className="text-white/70 font-medium text-xs">
                   {isListening ? "LISTENING" : error ? "ERROR" : "WAKE WORD"}
                 </span>
-              </div> */}
+              </div>
             </div>
 
             <button
