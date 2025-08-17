@@ -1,5 +1,6 @@
 "use client"
 import { RealtimeSession } from "@openai/agents/realtime";
+import { OpenAIRealtimeWebSocket } from "@openai/agents/realtime";
 import { usePorcupine } from "@picovoice/porcupine-react";
 import { Power, Settings } from "lucide-react";
 import { useEffect, useRef, useState } from "react";

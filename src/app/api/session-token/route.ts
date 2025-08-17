@@ -4,6 +4,7 @@ import env from "@/app/config/env";
 
 const openai = new OpenAI({
   apiKey: env.NEXT_OPENAI_API_KEY,
+  dangerouslyAllowBrowser: true
 });
 
 export async function GET(request: NextRequest) {
