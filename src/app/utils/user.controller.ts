@@ -12,6 +12,8 @@ export async function getSessionToken() {
   const session = await openai.beta.realtime.sessions.create({
     model: "gpt-4o-realtime-preview",
   });
+
+  console.log("Session token: ", session.client_secret.value)
   
   return session.client_secret.value
 }
