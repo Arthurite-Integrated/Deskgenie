@@ -1,23 +1,15 @@
-import OpenAI from "openai";
 import { NextRequest, NextResponse } from "next/server";
-import env from "@/app/config/env";
-
-const openai = new OpenAI({
-  apiKey: env.NEXT_OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true
-});
+import { getSessionToken } from "@/app/utils/user.controller";
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await openai.beta.realtime.sessions.create({
-      model: "gpt-4o-realtime-preview",
-    });
+    const session = await getSessionToken()
 
     return NextResponse.json(
       {
         success: true,
         message: "Session token generated successfully!",
-        data: session.client_secret.value,
+        data: session,
       },
       { status: 200 }
     );
