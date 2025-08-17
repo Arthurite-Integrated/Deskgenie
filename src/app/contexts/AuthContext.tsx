@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await authClient.signIn.social({
         provider: "google",
-        callbackURL: `${env.VITE_CLIENT_URL}/genie`,
+        callbackURL: `${'env.VITE_CLIENT_URL'}/genie`,
       });
     } catch (error) {
       console.error("Sign in error:", error);

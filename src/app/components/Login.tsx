@@ -4,6 +4,7 @@ import genie from "./../assets/ai.png";
 import arthurite from "../assets/arthurite.png";
 import aws from "../assets/aws.png";
 import { useAuth } from "../contexts/AuthContext";
+import Image from "next/image";
 
 export default function Login() {
   const [isSignIn, setIsSignIn] = useState(true);
@@ -19,7 +20,7 @@ export default function Login() {
     agreedToTerms: false,
   });
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: any) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -69,8 +70,8 @@ export default function Login() {
             <span className="text-white/80 mr-2">Powered by</span>
             <div className="gap-2 flex flex-row items-center">
               <span className="font-bold">Arthurite</span>
-              <img src={arthurite} className="h-6 w-auto" alt="Arthurite" />
-              <img src={aws} className="h-7 w-auto" alt="Arthurite" />
+              <Image src={arthurite} className="h-6 w-auto" alt="Arthurite" />
+              <Image src={aws} className="h-7 w-auto" alt="Arthurite" />
             </div>
           </div>
         </div>

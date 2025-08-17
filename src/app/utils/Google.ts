@@ -18,8 +18,8 @@ class Google {
     if (!this.access_token || !this.refresh_token || !this.expiry_date) throw new Error('Missing or invalid user tokens.')
     
     const oAuth2Client = new google.auth.OAuth2({
-      clientId: env.GOOGLE_CLIENT_ID,
-      clientSecret: env.GOOGLE_CLIENT_SECRET
+      clientId: 'env.GOOGLE_CLIENT_ID',
+      clientSecret: 'env.GOOGLE_CLIENT_SECRET'
     });
 
     oAuth2Client.setCredentials({

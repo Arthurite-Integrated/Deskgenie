@@ -20,7 +20,7 @@ class DeskGenieClient {
     try {
       const res = await axios({
         method: "GET",
-        url: `${env.VITE_SERVER_URL}/api/calendar`,
+        url: `${'env.VITE_SERVER_URL'}/api/calendar`,
         withCredentials: true,
       });
       console.log(res.data);
@@ -34,7 +34,7 @@ class DeskGenieClient {
     try {
       const res = await axios({
         method: "GET",
-        url: `${env.VITE_SERVER_URL}/api/calendar/${month}${date !== null ? `?date=${date}` : undefined}`,
+        url: `${'env.VITE_SERVER_URL'}/api/calendar/${month}${date !== null ? `?date=${date}` : undefined}`,
         withCredentials: true,
       });
       console.log(res.data);

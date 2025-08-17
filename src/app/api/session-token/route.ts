@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import env from "@/app/config/env";
 
 const openai = new OpenAI({
-  apiKey: env.OPENAI_API_KEY,
+  apiKey: env.NEXT_OPENAI_API_KEY,
 });
 
 export async function GET(request: NextRequest) {

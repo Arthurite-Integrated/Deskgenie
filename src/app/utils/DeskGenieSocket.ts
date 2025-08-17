@@ -71,7 +71,7 @@ class DeskGenieSocket {
     }
   }
 
-  stringify(data: { action: string; sessionId?: string; payload?; msg?: string }) {
+  stringify(data: { action: string; sessionId?: string; payload?: any; msg?: string }) {
     return JSON.stringify(data);
   }
 
@@ -79,7 +79,7 @@ class DeskGenieSocket {
     return JSON.parse(data);
   }
 
-  send(data) {
+  send(data: any) {
     if (this.socket?.readyState === WebSocket.OPEN) {
       this.socket.send(this.stringify(data));
     } else {

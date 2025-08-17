@@ -51,7 +51,7 @@ export default function IntegrationsModal({
     },
   ];
 
-  const handleBackdropClick = (e) => {
+  const handleBackdropClick = (e: any) => {
     if (e.target === e.currentTarget) {
       setIsOpen(false);
     }
