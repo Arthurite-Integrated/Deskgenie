@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* config options here */
+  output: 'standalone', // Enable standalone output for Docker
   webpack: (config, { isServer }) => {
     // Exclude Node.js modules from client-side bundle
     if (!isServer) {
