@@ -1,10 +1,11 @@
 import { CheckCircle, ExternalLink, X } from "lucide-react";
 import { useState } from "react";
-import discord from "./../assets/discord.svg";
-import calender from "./../assets/google.png";
-import notion from "../assets/notion.png";
-import slack from "./../assets/slack.png";
+import discord from "@/app/assets/discord.svg";
+import calender from "@/app/assets/google.png";
+import notion from "@/app/assets/notion.png";
+import slack from "@/app/assets/slack.png";
 import { requestGoogleCalenderAccess } from "../lib/auth-client";
+import Image from "next/image";
 
 export default function IntegrationsModal({
   isOpen,
@@ -107,7 +108,7 @@ export default function IntegrationsModal({
                     <div
                       className={`p-3 bg-gradient-to-r ${service.gradient} rounded-xl text-white shadow-lg group-hover:shadow-xl group-hover:scale-110 transition-all duration-300`}
                     >
-                      <img src={Icon} className="w-6 h-6" />
+                      <Image alt='icons' src={Icon} className="w-6 h-6" />
                     </div>
                     <div className="flex-1">
                       <h3 className="font-bold text-gray-900 text-lg group-hover:text-emerald-600 transition-colors duration-200">
