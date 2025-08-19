@@ -1,12 +1,16 @@
 "use server"
 
 import OpenAI from "openai";
-import env from "../config/env";
 
 export async function getSessionToken() {
+  const apiKey = process.env.NEXT_OPENAI_API_KEY;
+  
+  if (!apiKey) {
+    throw new Error("OpenAI API key not found in environment variables");
+  }
+
   const openai = new OpenAI({
-    apiKey: process.env.NEXT_OPENAI_API_KEY,
-    dangerouslyAllowBrowser: true,
+    apiKey: apiKey,
   });
 
   const session = await openai.beta.realtime.sessions.create({

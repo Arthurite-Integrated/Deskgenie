@@ -1,0 +1,26 @@
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": "Shedule an appointment for Satar on a business trip for the organization on 10th of november,2025 10pm with email spectra@me.com",
+      "timestamp": "2025-08-18T16:13:09.875Z"
+    },
+    {
+      "role": "assistant",
+      "content": "It looks like you're looking to schedule an appointment for Satar on November 10th, 2025, at 10 PM. Just to clarify, is there a specific address or location for this meeting? Would you also like me to set a reminder or send a calendar invite to spectra@me.com?",
+      "timestamp": "2025-08-18T16:13:13.435Z"
+    },
+    {
+      "role": "user",
+      "content": "no",
+      "timestamp": "2025-08-18T16:13:23.530Z"
+    },
+    {
+      "role": "assistant",
+      "content": "Alright, I won't send any reminders or calendar invites. If there's anything else you need for Satar's appointment, feel free to let me know!",
+      "timestamp": "2025-08-18T16:13:25.805Z"
+    }
+  ],
+  "sessionId": "session_1755533587690",
+  "startTime": "2025-08-18T16:13:07.690Z"
+}

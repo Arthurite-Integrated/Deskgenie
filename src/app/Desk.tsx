@@ -1,14 +1,13 @@
 "use client"
 
-import { RealtimeSession } from "@openai/agents/realtime";
-import { Power, Settings } from "lucide-react";
+import { OpenAIRealtimeWebRTC, RealtimeSession } from "@openai/agents/realtime";
+import { Power, Settings, AArrowUp } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import p from "./p.json";
 import { agent } from "./agent";
 import IntegrationsModal from "./components/ConnectModal";
 import { useAuth } from "./contexts/AuthContext";
 import DeskGenieClient from "./utils/DeskGenie";
-// import { usePorcupine } from "@picovoice/porcupine-react";
 
 export default function DeskGenie() {
   const [isCallActive, setIsCallActive] = useState(false);
@@ -21,64 +20,8 @@ export default function DeskGenie() {
   );
   const [connected, setConnected] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  // const { keywordDetection, isLoaded, isListening, error, init, start } = usePorcupine();
-
-  // useEffect(() => {
-  //   const initPorcupine = async () => {
-  //     try {
-  //       console.log("🎤 Initializing Porcupine...");
-  //       await init(
-  //         "fh81H2UkWp1q1Nv8DqmvgMVIBCvCR7rnJhTEqpevxWpAF6LsA9TeFA==",
-  //         [
-  //           {
-  //             base64: p.keyword,
-  //             sensitivity: 1,
-  //             label: "Hey Genie",
-  //           },
-  //         ],
-  //         { base64: p.model },
-  //       );
-  //       console.log("✅ Porcupine initialized successfully");
-  //     } catch (err) {
-  //       console.error("❌ Porcupine initialization failed:", err);
-  //     }
-  //   };
-
-  //   initPorcupine();
-  // }, [init]);
-
-  // // Start listening when Porcupine is loaded
-  // useEffect(() => {
-  //   if (isLoaded && !isListening && !error) {
-  //     console.log("🚀 Starting Porcupine listening...");
-  //     start();
-  //   }
-  // }, [isLoaded, isListening, error, start]);
-
-  // // Handle errors
-  // useEffect(() => {
-  //   if (error) {
-  //     console.error("❌ Porcupine error:", error);
-  //   }
-  // }, [error]);
-
-  // useEffect(() => {
-  //   console.log("📊 Porcupine Status:", {
-  //     isLoaded,
-  //     isListening,
-  //     error: error?.message || null,
-  //     keywordDetection,
-  //   });
-  // }, [isLoaded, isListening, error, keywordDetection]);
-
-  // useEffect(() => {
-  //   console.log("Hmmm");
-  //   if (keywordDetection !== null) {
-  //     console.log("🎯 Wake word detected! Index:", keywordDetection);
-  //     alert("Hi i'm genie");
-  //   }
-  //   console.log("Hmmm");
-  // }, [keywordDetection]);
+  const [isTextModalOpen, setIsTextModalOpen] = useState<boolean>(false);
+  const [messageInput, setMessageInput] = useState<string>("");
 
   useEffect(() => {
     let interval: NodeJS.Timeout | undefined;
@@ -94,15 +37,6 @@ export default function DeskGenie() {
     };
   }, [isCallActive]);
 
-  // useEffect(() => {
-  //   DeskGenieSocket.connect('ws://127.0.0.1:3000/ws');
-
-  //   return () => {
-  //     console.log("🧹 Cleaning up WebSocket...");
-  //     DeskGenieSocket.disconnect();
-  //   }
-  // }, []);
-
   const handleCallToggle = async () => {
     console.log("Button clicked! Current state:", isCallActive);
     if (isCallActive) {
@@ -111,17 +45,45 @@ export default function DeskGenie() {
       setIsCallActive(false);
       setCallDuration(0);
 
-      // Disconnect the session
-      // if (connected) {
-      //   await session.current?.close();
-      //   setConnected(false);
-      //   setGenieState('disconnected');
-      // }
       await startConnection();
     } else {
       console.log("▶️ Starting call...");
       setIsCallActive(true);
       await startConnection();
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!messageInput.trim()) {
+      console.warn("⚠️ Empty message, not sending");
+      return;
+    }
+
+    if (!connected || !session.current) {
+      console.warn("⚠️ No active session, cannot send message");
+      alert("Please connect to Genie first by clicking the main button!");
+      setIsTextModalOpen(false);
+      return;
+    }
+
+    try {
+      console.log("📤 Sending message to AI:", messageInput);
+      // Send the message to the AI agent
+      session.current.sendMessage(messageInput);
+      
+      // Clear the input and close modal
+      setMessageInput("");
+      setIsTextModalOpen(false);
+      
+      // If not already in a call, start one
+      if (!isCallActive) {
+        setIsCallActive(true);
+        if (genieState === "disconnected") {
+          await startConnection();
+        }
+      }
+    } catch (error) {
+      console.error("❌ Failed to send message:", error);
     }
   };
 
@@ -137,8 +99,12 @@ export default function DeskGenie() {
         // Get token and connect
         const token = await genie.getSessionToken();
         console.log("🎫 Got token:", token);
+        const transport = new OpenAIRealtimeWebRTC({
+          useInsecureApiKey: true
+        });
 
         session.current = new RealtimeSession(agent, {
+          transport,
           model: "gpt-4o-realtime-preview-2025-06-03",
           config: {
             turnDetection: {
@@ -147,17 +113,33 @@ export default function DeskGenie() {
               createResponse: true,
               interruptResponse: true,
             },
+            instructions: `
+            
+            You should greet the user immediately when the session starts. Be friendly and ask how you can help them today.
+            `
           },
         });
 
         session.current.on("transport_event", (e) => {
           console.log(e);
         });
+        
+        await session.current.connect({ apiKey: token, });
+        
+        // Send initial greeting message immediately after connection
+        session.current.sendMessage(`
+          # You're an english speaking Agent, only speak other language when you're asked to or you detect other language okay!!
+          Please greet the user now and ask how you can help them.
+          `);
 
-        await session.current.connect({
-          apiKey: token,
+        
+        session.current.on("transport_event", (e) => {
+          console.log(e);
         });
-
+        
+        await session.current.connect({ apiKey: token, });
+        
+        // session.current.sendMessage('Greet the user')
         // Set connected state
         setConnected(true);
         setGenieState("connected");
@@ -219,6 +201,64 @@ export default function DeskGenie() {
       {isModalOpen && (
         <IntegrationsModal isOpen={true} setIsOpen={() => setIsModalOpen(!isModalOpen)} />
       )}
+
+      {/* Text Input Modal */}
+      {isTextModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/50 backdrop-blur-md"
+            onClick={() => setIsTextModalOpen(false)}
+          ></div>
+          
+          {/* Modal Content */}
+          <div className="relative bg-white/95 backdrop-blur-lg rounded-3xl p-8 mx-4 w-full max-w-md shadow-2xl border border-white/20">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-2">
+                Send Message to Genie
+              </h2>
+              <p className="text-gray-600 text-sm">
+                Type your message and Genie will respond
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <textarea
+                value={messageInput}
+                onChange={(e) => setMessageInput(e.target.value)}
+                placeholder="Type your message here..."
+                className="w-full p-4 border border-gray-200 rounded-2xl bg-white/80 backdrop-blur-sm text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"
+                rows={4}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                    handleSendMessage();
+                  }
+                }}
+              />
+              
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => setIsTextModalOpen(false)}
+                  className="flex-1 px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-2xl font-medium transition-colors duration-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSendMessage}
+                  disabled={!messageInput.trim()}
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed text-white rounded-2xl font-medium transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100"
+                >
+                  Send Message
+                </button>
+              </div>
+              
+              <p className="text-xs text-gray-500 text-center">
+                Press Ctrl/Cmd + Enter to send quickly
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Background Pattern */}
       {/* <button
         onClick={() => alert("hi")}
@@ -243,10 +283,26 @@ export default function DeskGenie() {
           <div className="flex justify-between items-center max-w-7xl mx-auto">
             <button
               type="button"
-              onClick={signOut}
-              className="group relative z-50 p-3 md:p-4 bg-white/5 hover:bg-white/10 rounded-2xl backdrop-blur-sm border border-white/10 transition-all duration-300 hover:scale-105"
+              onClick={() => {
+                if (connected && session.current) {
+                  setIsTextModalOpen(true);
+                }
+              }}
+              disabled={!connected || !session.current}
+              className={`group relative z-50 p-3 md:p-4 rounded-2xl backdrop-blur-sm border transition-all duration-300 ${
+                connected && session.current
+                  ? "bg-white/5 hover:bg-white/10 border-white/10 hover:scale-105 cursor-pointer"
+                  : "bg-white/2 border-white/5 cursor-not-allowed opacity-50"
+              }`}
+              title={connected && session.current ? "Send text message to Genie" : "Connect to Genie first to send messages"}
             >
-              <Power className="w-5 h-5 md:w-6 md:h-6 text-white/80 group-hover:text-white transition-colors" />
+              <AArrowUp 
+                className={`w-5 h-5 md:w-6 md:h-6 transition-colors ${
+                  connected && session.current
+                    ? "text-white/80 group-hover:text-white"
+                    : "text-white/30"
+                }`} 
+              />
             </button>
 
             <div className="flex items-center space-x-3">
