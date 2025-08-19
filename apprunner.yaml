@@ -1,0 +1,17 @@
+version: 1.0
+runtime: nodejs22
+build:
+  commands:
+    build:
+      - echo "Installing dependencies..."
+      - npm ci --verbose
+      - echo "Building application..."
+      - npm run build --verbose
+run:
+  runtime-version: 22
+  command: npm start
+  network:
+    port: 3000
+  env:
+    - name: NODE_ENV
+      value: production
